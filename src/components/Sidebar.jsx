@@ -1,14 +1,22 @@
 import { Link, useLocation } from 'react-router-dom'
-
-const navigation = [
-  { name: 'Overview', href: '/', icon: '📊' },
-  { name: 'Members', href: '/members', icon: '👥' },
-  { name: 'Refunds', href: '/refunds', icon: '💰' },
-  { name: 'Analytics', href: '/analytics', icon: '📈' },
-]
+import { useAuth } from '../contexts/AuthContext'
 
 export default function Sidebar({ isOpen, setIsOpen }) {
   const location = useLocation()
+  const { hasRole, user } = useAuth()
+
+  // Define navigation items based on role
+  const allNavigation = [
+    { name: 'Overview', href: '/', icon: '📊', roles: ['Creator', 'Admin'] },
+    { name: 'Members', href: '/members', icon: '👥', roles: ['Admin'] },
+    { name: 'Refunds', href: '/refunds', icon: '💰', roles: ['Creator', 'Admin'] },
+    { name: 'Analytics', href: '/analytics', icon: '📈', roles: ['Creator', 'Admin'] },
+  ]
+
+  // Filter navigation based on user role
+  const navigation = allNavigation.filter(item => 
+    item.roles.some(role => hasRole(role))
+  )
 
   return (
     <>
@@ -62,12 +70,14 @@ export default function Sidebar({ isOpen, setIsOpen }) {
           {/* User info */}
           <div className="px-4 py-4 border-t border-gray-200">
             <div className="flex items-center">
-              <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                <span className="text-sm font-medium text-gray-700">JD</span>
+              <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
+                <span className="text-sm font-medium text-white">
+                  {user?.name?.charAt(0) || 'U'}
+                </span>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-900">John Doe</p>
-                <p className="text-xs text-gray-500">Creator</p>
+                <p className="text-sm font-medium text-gray-900">{user?.name || 'User'}</p>
+                <p className="text-xs text-gray-500">{user?.role || 'Guest'}</p>
               </div>
             </div>
           </div>

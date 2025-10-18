@@ -1,4 +1,12 @@
+import { useAuth } from '../contexts/AuthContext'
+
 export default function Navbar({ onMenuClick }) {
+  const { user, logout } = useAuth()
+
+  const handleLogout = () => {
+    logout()
+  }
+
   return (
     <header className="bg-white shadow-sm border-b border-gray-200 lg:ml-64">
       <div className="px-4 sm:px-6 lg:px-8">
@@ -30,14 +38,27 @@ export default function Navbar({ onMenuClick }) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5-5-5h5v-12a7 7 0 00-14 0v12h5l-5 5-5-5h5" />
               </svg>
             </button>
+            
+            {/* User info and logout */}
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
-                <span className="text-white text-sm font-medium">JD</span>
+                <span className="text-white text-sm font-medium">
+                  {user?.name?.charAt(0) || 'U'}
+                </span>
               </div>
               <div className="hidden sm:block">
-                <p className="text-sm font-medium text-gray-900">John Doe</p>
-                <p className="text-xs text-gray-500">john@example.com</p>
+                <p className="text-sm font-medium text-gray-900">{user?.name || 'User'}</p>
+                <p className="text-xs text-gray-500">{user?.email || 'user@example.com'}</p>
               </div>
+              <button
+                onClick={handleLogout}
+                className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors duration-200"
+                title="Logout"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+              </button>
             </div>
           </div>
         </div>

@@ -1,6 +1,7 @@
+import { useState, useEffect } from 'react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts'
 import { analyticsData, chartColors, formatCurrency, formatPercentage, formatNumber } from '../data/analyticsData'
-import { mockTransactions, getTransactionsByType, getTransactionStats, formatCurrency as formatTransactionCurrency } from '../data/mockTransactions'
+import { getCurrentTransactions, getTransactionsByType, getTransactionStats, formatCurrency as formatTransactionCurrency } from '../data/mockTransactions'
 
 function StatCard({ title, value, change, trend, icon }) {
   return (
@@ -27,6 +28,17 @@ function StatCard({ title, value, change, trend, icon }) {
 }
 
 export default function Analytics() {
+  const [transactions, setTransactions] = useState(getCurrentTransactions())
+  
+  // Update transactions when the data changes
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTransactions([...getCurrentTransactions()])
+    }, 1000) // Check for updates every second
+    
+    return () => clearInterval(interval)
+  }, [])
+  
   const transactionStats = getTransactionStats()
   const purchases = getTransactionsByType('purchase')
   const refunds = getTransactionsByType('refund')

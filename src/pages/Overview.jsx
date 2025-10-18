@@ -1,4 +1,5 @@
-import { getRecentTransactions, getTransactionStats, formatCurrency, formatDate } from '../data/mockTransactions'
+import { useState, useEffect } from 'react'
+import { getRecentTransactions, getTransactionStats, formatCurrency, formatDate, generateInsights, addRandomPurchase, addRandomRefund, getCurrentTransactions } from '../data/mockTransactions'
 
 // Dummy data
 const dashboardData = {
@@ -169,12 +170,171 @@ function RecentTransactionsTable({ transactions }) {
   )
 }
 
+function InsightsPanel({ insights }) {
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="px-6 py-4 border-b border-gray-200">
+        <h3 className="text-lg font-semibold text-gray-900">Key Insights</h3>
+        <p className="text-sm text-gray-600">Automated analysis of your business performance</p>
+      </div>
+      <div className="p-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {insights.map((insight, index) => (
+            <div
+              key={index}
+              className={`p-4 rounded-lg border-l-4 ${
+                insight.isPositive
+                  ? 'bg-green-50 border-green-400'
+                  : 'bg-red-50 border-red-400'
+              }`}
+            >
+              <div className="flex items-start">
+                <div className="flex-shrink-0">
+                  <span className="text-2xl">{insight.icon}</span>
+                </div>
+                <div className="ml-3 flex-1">
+                  <p className={`text-sm font-medium ${
+                    insight.isPositive ? 'text-green-800' : 'text-red-800'
+                  }`}>
+                    {insight.message}
+                  </p>
+                  {insight.change !== 0 && (
+                    <div className="mt-1">
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                        insight.isPositive
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {insight.change > 0 ? '+' : ''}{insight.change.toFixed(1)}%
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function SimulationButtons({ onPurchase, onRefund, isProcessing }) {
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="px-6 py-4 border-b border-gray-200">
+        <h3 className="text-lg font-semibold text-gray-900">Simulate Activity</h3>
+        <p className="text-sm text-gray-600">Test the dashboard with simulated transactions</p>
+      </div>
+      <div className="p-6">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <button
+            onClick={onPurchase}
+            disabled={isProcessing}
+            className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            {isProcessing ? 'Processing...' : 'Simulate New Purchase'}
+          </button>
+          <button
+            onClick={onRefund}
+            disabled={isProcessing}
+            className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            {isProcessing ? 'Processing...' : 'Simulate Refund'}
+          </button>
+        </div>
+        <p className="text-xs text-gray-500 mt-3 text-center">
+          Click to add random transactions and see real-time updates
+        </p>
+      </div>
+    </div>
+  )
+}
+
 export default function Overview() {
-  const recentTransactions = getRecentTransactions(10)
+  const [transactions, setTransactions] = useState(getCurrentTransactions())
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [notification, setNotification] = useState(null)
+  
+  // Calculate metrics from current transactions
+  const recentTransactions = transactions.slice(0, 10)
   const transactionStats = getTransactionStats()
+  const insights = generateInsights()
+
+  // Function to refresh data
+  const refreshData = () => {
+    setTransactions([...getCurrentTransactions()])
+  }
+
+  // Show notification
+  const showNotification = (message, type = 'success') => {
+    setNotification({ message, type })
+    setTimeout(() => setNotification(null), 3000)
+  }
+
+  // Handle purchase simulation
+  const handleSimulatePurchase = async () => {
+    setIsProcessing(true)
+    try {
+      const newTransaction = addRandomPurchase()
+      if (newTransaction) {
+        refreshData()
+        showNotification(`New purchase: ${newTransaction.productName} - ${formatCurrency(newTransaction.amount)}`, 'success')
+      }
+    } catch (error) {
+      console.error('Error adding purchase:', error)
+      showNotification('Error adding purchase', 'error')
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  // Handle refund simulation
+  const handleSimulateRefund = async () => {
+    setIsProcessing(true)
+    try {
+      const newRefund = addRandomRefund()
+      if (newRefund) {
+        refreshData()
+        showNotification(`New refund: ${newRefund.productName} - ${formatCurrency(newRefund.amount)}`, 'warning')
+      } else {
+        showNotification('No purchases available to refund', 'error')
+      }
+    } catch (error) {
+      console.error('Error adding refund:', error)
+      showNotification('Error adding refund', 'error')
+    } finally {
+      setIsProcessing(false)
+    }
+  }
 
   return (
     <div className="p-6">
+      {/* Notification */}
+      {notification && (
+        <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-sm ${
+          notification.type === 'success' ? 'bg-green-500 text-white' :
+          notification.type === 'warning' ? 'bg-yellow-500 text-white' :
+          'bg-red-500 text-white'
+        }`}>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">{notification.message}</span>
+            <button 
+              onClick={() => setNotification(null)}
+              className="ml-2 text-white hover:text-gray-200"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatCard
@@ -221,6 +381,20 @@ export default function Overview() {
             </svg>
           }
         />
+      </div>
+
+      {/* Simulation Buttons */}
+      <div className="mb-8">
+        <SimulationButtons 
+          onPurchase={handleSimulatePurchase}
+          onRefund={handleSimulateRefund}
+          isProcessing={isProcessing}
+        />
+      </div>
+
+      {/* Key Insights Panel */}
+      <div className="mb-8">
+        <InsightsPanel insights={insights} />
       </div>
 
       {/* Products Table */}
